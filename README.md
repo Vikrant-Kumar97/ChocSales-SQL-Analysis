@@ -135,5 +135,3 @@ ORDER BY Total_Sales DESC;
 ## Author
 
 **Vikrant Kumar**
-- GitHub: [@your-username](https://github.com/your-username)
-- LinkedIn: [your-linkedin](https://www.linkedin.com/in/your-linkedin)
