@@ -1,0 +1,924 @@
+Question 1: Multiple LIKE Conditions
+
+Display all records where the Product starts with 'C' or ends with 'S'.
+
+Question 2: Exclude Pattern
+
+Display all records where the Sales_Person name does not start with 'M'.
+
+Hint: Use NOT LIKE.
+
+Question 3: Exact Character Pattern
+
+Display all records where the Country has exactly 6 characters and the third character is 'n'.
+
+Hint: Use _ (underscore).
+
+Question 4: Combined Conditions
+
+Display all records where:
+
+Product contains 'CO', and
+Amount is greater than 5000.
+
+Question 5: Complex Pattern Matching
+
+Display all records where:
+
+Sales_Person starts with 'S',
+contains 'a' anywhere after the first character, and
+ends with 'n'.
+
+Bonus Interview Challenge ⭐
+
+Display all records where the Product:
+
+does not start with 'C',
+contains the letter 'O', and
+ends with 'A'.
+
+
+
+
+
+SELECT *
+FROM ChocSales
+WHERE PRODUCT LIKE 'C%' OR PRODUCT LIKE '%S'
+
+
+SELECT *
+FROM	 ChocSales
+WHERE Sales_Person NOT LIKE 'M%'
+
+
+SELECT *
+FROM	 ChocSales
+WHERE COUNTRY LIKE '__N___'
+
+
+SELECT *
+FROM ChocSales
+WHERE PRODUCT LIKE '%CO%'
+              AND AMOUNT > 5000
+              ORDER BY Amount ASC
+
+SELECT *
+FROM ChocSales
+WHERE Sales_Person LIKE 'S%A%N%' 
+
+                  
+SELECT *
+FROM ChocSales
+WHERE Product NOT LIKE 'C%'
+  AND Product LIKE '%O%'
+  AND Product LIKE '%A';
+  
+  
+  
+  
+  ----What are Window Functions in SQL?
+
+A Window Function performs a calculation across a set of related rows without combining those rows into a single row.
+
+In simple words:
+
+Window Functions allow you to calculate something about other rows while still keeping the original rows in your result.
+
+They are commonly used for:
+
+Ranking
+Finding top N records
+Running totals
+Moving averages
+Comparing a row with previous/next rows
+Calculating percentages
+Finding highest/lowest values within groups
+1. Why do we need Window Functions?
+
+Let's use your ChocSales table.
+
+Suppose you want to find the total sales for each Sales_Person.
+
+With GROUP BY:
+
+SELECT Sales_Person,
+       SUM(Amount) AS Total_Sales
+FROM ChocSales
+GROUP BY Sales_Person;
+
+You might get:
+
+Sales_Person	Total_Sales
+Amit	25,000
+John	35,000
+Sarah	28,000
+
+The individual sales records are gone from the result.
+
+But suppose you want:
+
+Sales_Person	Amount	Total_Sales
+Amit	5,000	25,000
+Amit	8,000	25,000
+Amit	12,000	25,000
+John	10,000	35,000
+John	25,000	35,000
+
+You want the individual rows + the salesperson's total.
+
+That's where a Window Function is useful.
+
+SELECT Sales_Person,
+       Amount,
+       SUM(Amount) OVER(PARTITION BY Sales_Person) AS Total_Sales
+FROM ChocSales;
+2. GROUP BY vs Window Function
+
+This is one of the most important interview concepts.
+
+GROUP BY
+SELECT Sales_Person,
+       SUM(Amount) AS Total_Sales
+FROM ChocSales
+GROUP BY Sales_Person;
+
+Combines rows.
+
+Window Function
+SELECT Sales_Person,
+       Amount,
+       SUM(Amount) OVER(PARTITION BY Sales_Person) AS Total_Sales
+FROM ChocSales;
+
+Keeps the rows.
+
+Easy way to remember:
+
+GROUP BY → Collapse rows
+
+Window Function → Keep rows + perform calculation
+
+3. Basic Syntax
+
+Most Window Functions follow this structure:
+
+FUNCTION() OVER(
+    PARTITION BY column
+    ORDER BY column
+)
+
+For example:
+
+ROW_NUMBER() OVER(
+    PARTITION BY Country
+    ORDER BY Amount DESC
+)
+
+There are three important parts:
+
+FUNCTION()
+
+What calculation do you want?
+
+Examples:
+
+ROW_NUMBER()
+SUM()
+AVG()
+COUNT()
+RANK()
+DENSE_RANK()
+PARTITION BY
+
+Defines the group/window.
+
+PARTITION BY Country
+
+means:
+
+Calculate separately for each country.
+
+ORDER BY
+
+Defines the order inside that window.
+
+ORDER BY Amount DESC
+
+means:
+
+Highest amount first.
+
+4. Example: ROW_NUMBER()
+
+Suppose you want to rank every sale:
+
+SELECT Sales_Person,
+       Amount,
+       ROW_NUMBER() OVER(
+           ORDER BY Amount DESC
+       ) AS Row_Num
+FROM ChocSales;
+
+Result:
+
+Sales_Person	Amount	Row_Num
+John	15,000	1
+Amit	12,000	2
+Sarah	10,000	3
+John	8,000	4
+
+This is useful when you need Top 1, Top 2, Top 10, etc.
+
+5. Example: Ranking within each Country
+SELECT Country,
+       Sales_Person,
+       Amount,
+       ROW_NUMBER() OVER(
+           PARTITION BY Country
+           ORDER BY Amount DESC
+       ) AS Row_Num
+FROM ChocSales;
+
+Now numbering starts again for every country.
+
+Country	Sales_Person	Amount	Row_Num
+India	Amit	15,000	1
+India	John	10,000	2
+India	Sarah	8,000	3
+USA	John	20,000	1
+USA	Amit	12,000	2
+USA	Sarah	9,000	3
+6. Example: Running Total
+
+Window Functions are also useful for running totals.
+
+SELECT [Date],
+       Amount,
+       SUM(Amount) OVER(
+           ORDER BY [Date]
+       ) AS Running_Total
+FROM ChocSales;
+
+Example:
+
+Date	Amount	Running_Total
+Jan 1	5,000	5,000
+Jan 2	7,000	12,000
+Jan 3	4,000	16,000
+Jan 4	8,000	24,000
+
+Each row can see the previous rows and calculate the cumulative total.
+
+7. Example: LAG()
+
+Window Functions can also compare the current row with a previous row.
+
+SELECT [Date],
+       Amount,
+       LAG(Amount) OVER(
+           ORDER BY [Date]
+       ) AS Previous_Amount
+FROM ChocSales;
+
+Result:
+
+Date	Amount	Previous_Amount
+Jan 1	5,000	NULL
+Jan 2	7,000	5,000
+Jan 3	4,000	7,000
+Jan 4	8,000	4,000
+
+This is useful for things like:
+
+Previous month's sales
+Previous day's revenue
+Change from previous transaction
+8. Common Window Functions You Should Learn
+
+For your SQL/Data Analyst preparation, I recommend learning them in this order:
+
+Level 1 — Ranking
+ROW_NUMBER()
+RANK()
+DENSE_RANK()
+Level 2 — Aggregation
+SUM() OVER()
+AVG() OVER()
+COUNT() OVER()
+MIN() OVER()
+MAX() OVER()
+Level 3 — Previous/Next Row
+LAG()
+LEAD()
+Level 4 — Advanced
+FIRST_VALUE()
+LAST_VALUE()
+NTILE()
+⭐ Why do we use Window Functions?
+
+The main reason is:
+
+They allow us to perform calculations across related rows without losing the detail of individual rows.
+
+For example, you can answer questions like:
+
+"What is the highest sale for each salesperson?"
+
+"What is the running total of sales?"
+
+"What is the previous sale amount?"
+
+"What percentage of total sales does each transaction represent?"
+
+"What are the top 3 sales for each country?"
+
+These are much easier with Window Functions.
+
+🧠 The most important concept
+
+Remember this:
+
+GROUP BY
+    ↓
+Groups rows together
+    ↓
+Fewer rows in output
+
+Whereas:
+
+WINDOW FUNCTION
+    ↓
+Looks across related rows
+    ↓
+Keeps individual rows
+    ↓
+Adds calculation/ranking to each row
+
+And the three keywords you should master are:
+
+FUNCTION() OVER(
+    PARTITION BY ...
+    ORDER BY ...
+)
+
+FUNCTION() → What calculation?
+
+PARTITION BY → For which group?
+
+ORDER BY → In what order?
+
+Once you understand these three, ROW_NUMBER(), RANK(), DENSE_RANK(), LAG(), LEAD(), and running totals become much easier.
+
+
+
+
+
+
+
+
+
+
+SESSION 2
+Question 1
+
+Display the total sales amount for each Product.
+
+SELECT Product,
+       SUM(Amount) AS Total_Amount
+FROM ChocSales
+GROUP BY Product;
+
+Question 2
+
+Display the number of orders placed by each Sales_Person.
+
+SELECT Sales_Person,
+       COUNT(*) AS Total_Orders
+FROM ChocSales
+GROUP BY Sales_Person;
+
+
+
+Question 3
+
+Display the total boxes shipped for each Country.
+
+SELECT Country,
+       SUM(Boxes_Shipped) AS Total_Boxes
+FROM ChocSales
+GROUP BY Country;
+
+
+Question 4
+
+Display the average sales amount for each Product, but show only those products whose average amount is greater than 5000.
+
+SELECT Product,
+       AVG(Amount) AS Average_Amount
+FROM ChocSales
+GROUP BY Product
+HAVING AVG(Amount) > 5000;
+
+
+Question 5
+
+Display for each Country:
+
+Total Sales
+Total Boxes Shipped
+Number of Orders
+Average Sales
+
+Sort by Total Sales in descending order.
+
+SELECT Country,
+       SUM(Amount) AS Total_Sales,
+       SUM(Boxes_Shipped) AS Total_Boxes,
+       COUNT(*) AS Total_Orders,
+       AVG(Amount) AS Average_Sales
+FROM ChocSales
+GROUP BY Country
+
+
+Display the Top 3 Sales_Persons based on total sales amount.
+
+SELECT TOP 3
+       Sales_Person,
+       SUM(Amount) AS Total_Sales
+FROM ChocSales
+GROUP BY Sales_Person
+ORDER BY Total_Sales DESC;
+
+
+1. Which Sales_Person has generated more than ₹50,000 in total sales?
+SELECT Sales_Person,
+       SUM(Amount) AS Total_Sales
+FROM ChocSales
+GROUP BY Sales_Person
+HAVING SUM(Amount) > 50000;
+
+2. Show the total sales for each Product in each Country.
+SELECT Country,
+       Product,
+       SUM(Amount) AS Total_Sales
+FROM ChocSales
+GROUP BY Country, Product;
+
+
+3. Which Products have been sold more than 10 times?
+SELECT Product,
+       COUNT(*) AS Total_Orders
+FROM ChocSales
+GROUP BY Product
+HAVING COUNT(*) > 10;
+
+4. Find the highest sale amount made by each Sales_Person.
+SELECT Sales_Person,
+       MAX(Amount) AS Highest_Sale
+FROM ChocSales
+GROUP BY Sales_Person;
+
+5. Show each Country's minimum, maximum, average, and total sales.
+SELECT Country,
+       MIN(Amount) AS Min_Sales,
+       MAX(Amount) AS Max_Sales,
+       AVG(Amount) AS Avg_Sales,
+       SUM(Amount) AS Total_Sales
+FROM ChocSales
+GROUP BY Country;
+
+These are common GROUP BY interview questions for SQL Server, especially for Data Analyst and SQL Fresher interviews. They cover GROUP BY, aggregate functions (SUM, COUNT, AVG, MIN, MAX), HAVING, ORDER BY, and grouping by multiple columns.
+
+
+
+
+
+
+Question 1 (Easy)
+
+Display the total sales amount for each Product, but show only products whose total sales are greater than 20,000.
+
+Answer
+SELECT Product,
+       SUM(Amount) AS Total_Sales
+FROM ChocSales
+GROUP BY Product
+HAVING SUM(Amount) > 20000;
+Question 2 (Easy–Intermediate)
+
+Display the number of orders for each Sales_Person, but show only those who have more than 5 orders.
+
+Answer
+SELECT Sales_Person,
+       COUNT(*) AS Total_Orders
+FROM ChocSales
+GROUP BY Sales_Person
+HAVING COUNT(*) > 5;
+Question 3 (Intermediate)
+
+Display the average sales amount for each Country, but show only countries where the average amount is greater than 5000.
+
+Answer
+SELECT Country,
+       AVG(Amount) AS Average_Sales
+FROM ChocSales
+GROUP BY Country
+HAVING AVG(Amount) > 5000;
+Question 4 (Intermediate)
+
+Display the total boxes shipped for each Product, but show only products that have shipped more than 500 boxes.
+
+Answer
+SELECT Product,
+       SUM(Boxes_Shipped) AS Total_Boxes
+FROM ChocSales
+GROUP BY Product
+HAVING SUM(Boxes_Shipped) > 500;
+Question 5 (Interview Level)
+
+Display the total sales for each Sales_Person in each Country, but show only those groups where the total sales exceed 30,000.
+
+Answer
+SELECT Sales_Person,
+       Country,
+       SUM(Amount) AS Total_Sales
+FROM ChocSales
+GROUP BY Sales_Person, Country
+HAVING SUM(Amount) > 30000;
+⭐ Bonus Interview Question
+
+Display the Products that:
+
+have more than 10 orders, and
+have total sales greater than 50,000.
+Answer
+SELECT Product,
+       COUNT(*) AS Total_Orders,
+       SUM(Amount) AS Total_Sales
+FROM ChocSales
+GROUP BY Product
+HAVING COUNT(*) > 10
+   AND SUM(Amount) > 50000;
+💡 Interview Tip
+
+Remember the difference between WHERE and HAVING:
+
+WHERE	HAVING
+Filters rows before grouping	Filters groups after grouping
+Cannot use aggregate functions like SUM(), COUNT(), AVG()	Can use aggregate functions
+Used before GROUP BY	Used after GROUP BY
+
+A common interview question is: "Can we use WHERE and HAVING together?"
+Answer: Yes. WHERE filters individual rows first, then GROUP BY forms groups, and finally HAVING filters those groups.
+
+
+
+
+
+Here are 5 CTE (Common Table Expression) interview questions based on your ChocSales table.
+
+Table: ChocSales
+Columns: Sales_Person, Country, Product, Date, Amount, Boxes_Shipped
+
+Question 1 (Easy)
+
+Create a CTE that displays all sales where the Amount is greater than 5000, then retrieve all columns from the CTE.
+
+Answer
+WITH HighSales AS
+(
+    SELECT *
+    FROM ChocSales
+    WHERE Amount > 5000
+)
+SELECT *
+FROM HighSales;
+
+
+Question 2 (Easy–Intermediate)
+
+Create a CTE that calculates the total sales for each Product, then display only products with total sales greater than 20,000.
+
+Answer
+WITH ProductSales AS
+(
+    SELECT Product,
+           SUM(Amount) AS Total_Sales
+    FROM ChocSales
+    GROUP BY Product
+)
+SELECT *
+FROM ProductSales
+WHERE Total_Sales > 20000;
+
+
+Question 3 (Intermediate)
+
+Create a CTE that calculates the total sales for each Sales_Person, then display the top 3 Sales_Persons by total sales.
+
+Answer
+WITH SalesSummary AS
+(
+    SELECT Sales_Person,
+           SUM(Amount) AS Total_Sales
+    FROM ChocSales
+    GROUP BY Sales_Person
+)
+SELECT TOP 3 *
+FROM SalesSummary
+ORDER BY Total_Sales DESC;
+
+
+Question 4 (Intermediate)
+
+Create a CTE that calculates the average sales amount for each Country, then display only countries where the average sales are greater than 5000.
+
+Answer
+WITH CountrySales AS
+(
+    SELECT Country,
+           AVG(Amount) AS Avg_Sales
+    FROM ChocSales
+    GROUP BY Country
+)
+SELECT *
+FROM CountrySales
+WHERE Avg_Sales > 5000;
+
+
+------- by using subquery
+select *
+from (
+Select top 3 country,
+     avg([amount]) as Avrage_CountrySales
+         from ChocSales
+         group by Country
+         having avg([amount]) > 5500
+         ) as country_Sales
+
+Question 5 (Interview Level)
+
+Create a CTE that calculates the total sales and total boxes shipped for each Sales_Person, then display only those whose:
+
+Total Sales > 50,000
+Total Boxes Shipped > 100
+Answer
+WITH SalesReport AS
+(
+    SELECT Sales_Person,
+           SUM(Amount) AS Total_Sales,
+           SUM(Boxes_Shipped) AS Total_Boxes
+    FROM ChocSales
+    GROUP BY Sales_Person
+)
+SELECT *
+FROM SalesReport
+WHERE Total_Sales > 50000
+  AND Total_Boxes > 100;
+
+
+⭐ Bonus CTE Interview Question (Very Common)
+
+Display employees whose total sales are greater than the average total sales of all employees.
+
+Answer
+WITH SalesSummary AS
+(
+    SELECT Sales_Person,
+           SUM(Amount) AS Total_Sales
+    FROM ChocSales
+    GROUP BY Sales_Person
+)
+SELECT *
+FROM SalesSummary
+WHERE Total_Sales >
+(
+    SELECT AVG(Total_Sales)
+    FROM SalesSummary
+);
+
+
+
+OR 
+
+--- Solved by me
+with T_Sale As (
+select sales_person, 
+         sum(amount) as Total_Sales,
+         avg([amount]) as Avg_Total_sales
+     from ChocSales
+    group by Sales_Person
+   )
+
+   select Sales_Person,Total_Sales
+   from T_Sale
+   where Total_Sales > Avg_Total_sales
+   order by Total_Sales desc
+💡 CTE Interview Tips
+A CTE starts with WITH.
+It exists only for the next SQL statement.
+It improves readability compared to nested subqueries.
+You can define multiple CTEs by separating them with commas.
+Recursive CTEs are commonly used for hierarchical data such as employee-manager relationships.
+
+These questions are commonly asked in SQL interviews for Data Analyst, BI Analyst, and SQL Developer roles.
+
+
+
+Question 1 (Easy)
+
+Display all records where the Amount is greater than the average Amount of all sales.
+
+Answer
+SELECT *
+FROM ChocSales
+WHERE Amount >
+(
+    SELECT AVG(Amount)
+    FROM ChocSales
+);
+Question 2 (Easy–Intermediate)
+
+Display the Sales_Person(s) who made the highest sale amount.
+
+Answer
+SELECT *
+FROM ChocSales
+WHERE Amount =
+(
+    SELECT MAX(Amount)
+    FROM ChocSales
+);
+Question 3 (Intermediate)
+
+Display all records where the Country's average sales are greater than 5500.
+
+Answer
+SELECT *
+FROM
+(
+    SELECT Country,
+           AVG(Amount) AS Average_CountrySales
+    FROM ChocSales
+    GROUP BY Country
+) AS CountrySales
+WHERE Average_CountrySales > 5500;
+Question 4 (Interview Level)
+
+Display all sales made by the Sales_Person who has the highest total sales.
+
+Answer
+SELECT *
+FROM ChocSales
+WHERE Sales_Person =
+(
+    SELECT TOP 1 Sales_Person
+    FROM ChocSales
+    GROUP BY Sales_Person
+    ORDER BY SUM(Amount) DESC
+);
+Question 5 (Interview Level)
+
+Display all products whose total sales are greater than the average total sales of all products.
+
+Answer
+SELECT Product,
+       SUM(Amount) AS Total_Sales
+FROM ChocSales
+GROUP BY Product
+HAVING SUM(Amount) >
+(
+    SELECT AVG(ProductTotal)
+    FROM
+    (
+        SELECT SUM(Amount) AS ProductTotal
+        FROM ChocSales
+        GROUP BY Product
+    ) AS ProductSummary
+);
+⭐ Bonus Question (Very Common)
+
+Display the second highest sale amount.
+
+Answer
+SELECT MAX(Amount) AS Second_Highest
+FROM ChocSales
+WHERE Amount <
+(
+    SELECT MAX(Amount)
+    FROM ChocSales
+);
+💡 Interview Tips for Subqueries
+
+There are three common types of subqueries:
+
+Scalar Subquery (returns one value)
+SELECT AVG(Amount) FROM ChocSales;
+Multi-row Subquery (returns multiple rows)
+SELECT *
+FROM ChocSales
+WHERE Country IN
+(
+    SELECT Country
+    FROM ChocSales
+    WHERE Amount > 5000
+);
+Derived Table (Subquery in the FROM clause)
+SELECT *
+FROM
+(
+    SELECT Country,
+           AVG(Amount) AS AvgSales
+    FROM ChocSales
+    GROUP BY Country
+) AS CountrySummary;
+
+These questions are commonly asked in SQL interviews because they test your understanding of subqueries, aggregate functions, GROUP BY, HAVING, and derived tables.
+
+
+
+----Absolutely. Here is the side-by-side comparison of ROW_NUMBER(), RANK(), and DENSE_RANK() using your ChocSales data.
+
+ROW_NUMBER() vs RANK() vs DENSE_RANK()
+
+Suppose we have:
+
+Sales_Person	Amount
+John	10,000
+Amit	8,000
+Sarah	8,000
+David	5,000
+Rahul	3,000
+
+We use:
+
+ROW_NUMBER() OVER(ORDER BY Amount DESC)
+RANK() OVER(ORDER BY Amount DESC)
+DENSE_RANK() OVER(ORDER BY Amount DESC)
+Side-by-side result
+Sales_Person	Amount	ROW_NUMBER()	RANK()	DENSE_RANK()
+John	10,000	1	1	1
+Amit	8,000	2	2	2
+Sarah	8,000	3	2	2
+David	5,000	4	4	3
+Rahul	3,000	5	5	4
+🔥 The Main Difference
+Feature	ROW_NUMBER()	RANK()	DENSE_RANK()
+Same values get same number?	❌ No	✅ Yes	✅ Yes
+Unique number for every row?	✅ Yes	❌ No	❌ No
+Can ranks be skipped?	❌ No	✅ Yes	❌ No
+Ties allowed?	❌	✅	✅
+Common use	Unique row numbering	Competition ranking	Ranking without gaps
+Easy Example to Remember
+
+Imagine the scores are:
+
+100
+90
+90
+80
+ROW_NUMBER()
+100 → 1
+90  → 2
+90  → 3
+80  → 4
+RANK()
+100 → 1
+90  → 2
+90  → 2
+80  → 4
+DENSE_RANK()
+100 → 1
+90  → 2
+90  → 2
+80  → 3
+🧠 Best Trick to Remember
+
+Think about the 90, 90 tie:
+
+ROW_NUMBER()
+
+"I don't care about ties."
+
+1, 2, 3, 4
+RANK()
+
+"Ties share the rank, so I skip the next rank."
+
+1, 2, 2, 4
+DENSE_RANK()
+
+"Ties share the rank, but I don't skip."
+
+1, 2, 2, 3
+⭐ Interview Answer
+
+If an interviewer asks:
+
+What is the difference between ROW_NUMBER, RANK and DENSE_RANK?
+
+You can answer:
+
+ROW_NUMBER() gives every row a unique sequential number. RANK() gives the same rank to tied values but skips the next rank. DENSE_RANK() also gives the same rank to tied values, but does not skip ranks.
+
+That is the key difference you need to remember.
